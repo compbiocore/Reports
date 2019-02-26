@@ -1,9 +1,9 @@
 ---
-title: "Project Report"
+title: "ChIP-seq project report"
 output: html_document
 ---
 
-# Project report
+# ChIP-seq project report
 
 * This section of the report should contain a few sentences describing the experimental setup.
 * This should include information about the biological questions being asked, treatments and controls, replicates, sequencing depth and technology used, etc.
