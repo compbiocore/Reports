@@ -17,6 +17,7 @@ library(tidyverse)
 ```{r, include=FALSE}
 
 basic_stats_input_directory <- ('/Users/jwalla12/Repositories/fastqc_outputs/')
+multi_qc_directory <- ('/Users/jwalla12/Repositories/fastqc_outputs/multiqc_data/')
 ```
 
 ```{r, include=FALSE}
@@ -34,19 +35,19 @@ basic_stats_func<- function(input_directory){
   return(basic_statistics_table_md)
 }
 ```
+
 ```{r}
 basic_stats_func(basic_stats_input_directory)
 ```
 
-## Trimmed reads summary table (RNA-seq, DNA-seq, ChIP-seq, ATAC-seq)
-* A second QC analyses of trimmed reads goes here, be sure to include information about trimming parameters used.
+## Per base quality plot (RNA-seq, DNA-seq, ChIP-seq, ATAC-seq)
 ```{r, include=FALSE}
-per_base_quality <- read.table('/Users/jwalla12/Repositories/fastqc_outputs/multiqc_data/mqc_fastqc_per_base_sequence_quality_plot_1.txt', header=TRUE, sep='\t')
+### Per base quality ###
+per_base_quality_func <- function(multi_qc_directory){
+per_base_quality <- read.table((paste0(multi_qc_directory,'mqc_fastqc_per_base_sequence_quality_plot_1.txt')), header=TRUE, sep='\t')
 per_base_quality_tidy <- gather(per_base_quality, position, phred_score, -Sample) 
 per_base_quality_tidy$position <- gsub('X','', per_base_quality_tidy$position)
 per_base_quality_tidy$position <- sapply(per_base_quality_tidy$position, as.numeric)
-```
-```{r, include=FALSE}
 per_base_quality_plot <- plot_ly(data = per_base_quality_tidy,
                                  x = ~position,
                                  y = ~phred_score,
@@ -54,13 +55,77 @@ per_base_quality_plot <- plot_ly(data = per_base_quality_tidy,
                                  mode = 'lines',
                                  text = ~Sample,
                                  hoverinfo = 'text',
-                                 hovertext = paste('Sample: ', per_base_quality_tidy$Sample,
-                                                   'position: ', per_base_quality_tidy$position, 
-                                                   'phred_score: ', per_base_quality_tidy$phred_score))
+                                 hovertext = paste('Sample:', per_base_quality_tidy$Sample))
+return(per_base_quality_plot)
+}
 ```
+
 ```{r}
-per_base_quality_plot
+per_base_quality_func(multi_qc_directory)
 ```
+
+
+## Per base N-percentage plot (RNA-seq, DNA-seq, ChIP-seq, ATAC-seq)
+```{r, include=FALSE}
+### Per base quality ###
+per_base_n_content_func <- function(multi_qc_directory){
+per_base_n_content <- read.table((paste0(multi_qc_directory,'mqc_fastqc_per_base_n_content_plot_1.txt')), header=TRUE, sep='\t')
+
+per_base_n_content_tidy <- gather(per_base_n_content, position, percent_N, -Sample)
+
+per_base_n_content_tidy$position <- gsub('X','', per_base_n_content_tidy$position)
+
+per_base_n_content_tidy$position <- sapply(per_base_n_content_tidy$position, as.numeric)
+per_base_n_content_plot <- plot_ly(data = per_base_n_content_tidy,
+                                 x = ~position,
+                                 y = ~percent_N,
+                                 type = 'scatter',
+                                 mode = 'lines',
+                                 text = ~Sample,
+                                 hoverinfo = 'text',
+                                 hovertext = paste('Sample:', per_base_n_content_tidy$Sample)) %>% layout(yaxis=list(range=c(0,100)))
+return(per_base_n_content_plot)
+}
+```
+
+```{r}
+per_base_n_content_func(multi_qc_directory)
+```
+
+
+
+## Adapter content plot (RNA-seq, DNA-seq, ChIP-seq, ATAC-seq)
+```{r, include=FALSE}
+### Per base quality ###
+adapter_content_func <- function(multi_qc_directory){
+adapter_content <- read.table((paste0(multi_qc_directory,'mqc_fastqc_adapter_content_plot_1.txt')), header=TRUE, sep='\t')
+
+adapter_content_tidy <- gather(adapter_content, position, percent_of_sequences, -Sample)
+adapter_content_tidy$position <- gsub('X','', adapter_content_tidy$position)
+adapter_content_tidy$position <- sapply(adapter_content_tidy$position, as.numeric)
+adapter_content_plot <- plot_ly(data = adapter_content_tidy,
+                                 x = ~position,
+                                 y = ~percent_of_sequences,
+                                 type = 'scatter',
+                                 mode = 'lines',
+                                 text = ~Sample,
+                                 hoverinfo = 'text',
+                                 hovertext = paste('Sample:', adapter_content_tidy$Sample)) %>% layout(yaxis=list(range=c(0,100)))
+return(adapter_content_plot)
+}
+```
+
+```{r}
+adapter_content_func(multi_qc_directory)
+```
+
+
+
+
+
+
+
+
 
 
 
