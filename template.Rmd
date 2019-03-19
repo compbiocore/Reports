@@ -16,30 +16,27 @@ library(tidyverse)
 * This section of the report should contain a table containing a summary of the initial FastQC run.
 ```{r, include=FALSE}
 
-basic_stats_input_directory <- ('/Users/jwalla12/Repositories/fastqc_outputs/')
-multi_qc_directory <- ('/Users/jwalla12/Repositories/fastqc_outputs/multiqc_data/')
+multi_qc_directory <- ('/Users/jwalla12/QC_Test_files/raw/multiqc_data/')
 ```
 
+multiqc_general_stats
+######
+## General Stats (RNA-seq, DNA-seq, ChIP-seq, ATAC-seq)
 ```{r, include=FALSE}
 ### Basic Stats ###
-basic_stats_func<- function(input_directory){
-  file_list <- list.files(path=basic_stats_input_directory, pattern='fastqc_data.txt', recursive=TRUE, full.names=TRUE)
-  entire_qc_files <- lapply(file_list, function(x) read.table(x, fill = TRUE, header = FALSE, sep = '\t', col.names = c('V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7'), comment.char = '&', stringsAsFactors = FALSE))
-#basic stats
-  basic_statistics <- lapply(entire_qc_files, function(x) (df_rows <- slice(x, (which(x$V1=='>>Basic Statistics')+4):which(x$V1=='>>Per base sequence quality')-2) %>% select(-c('V3','V4','V5','V6','V7')) %>% rename(Measure=V1, Value=V2)))
-  column_1 <- basic_statistics[[1]]$Measure
-  basic_statistics_table <- bind_cols(basic_statistics) %>% select(-contains('Measure'))
-  basic_statistics_table$Measure <- column_1
-  basic_statistics_table <- basic_statistics_table[ , order(names(basic_statistics_table))]
-  basic_statistics_table_md <- kable(basic_statistics_table, format='markdown')
-  return(basic_statistics_table_md)
+general_stats_func<- function(input_directory){
+  general_stats <- read.table((paste0(multi_qc_directory,'multiqc_general_stats.txt')), header=TRUE, sep='\t')
+  general_stats_md <- kable(general_stats, format='markdown')
+  return(general_stats_md)
 }
 ```
 
 ```{r}
-basic_stats_func(basic_stats_input_directory)
+general_stats_func(multi_qc_directory)
 ```
+######
 
+######
 ## Per base quality plot (RNA-seq, DNA-seq, ChIP-seq, ATAC-seq)
 ```{r, include=FALSE}
 ### Per base quality ###
@@ -48,76 +45,74 @@ per_base_quality <- read.table((paste0(multi_qc_directory,'mqc_fastqc_per_base_s
 per_base_quality_tidy <- gather(per_base_quality, position, phred_score, -Sample) 
 per_base_quality_tidy$position <- gsub('X','', per_base_quality_tidy$position)
 per_base_quality_tidy$position <- sapply(per_base_quality_tidy$position, as.numeric)
-per_base_quality_plot <- plot_ly(data = per_base_quality_tidy,
-                                 x = ~position,
-                                 y = ~phred_score,
-                                 type = 'scatter',
-                                 mode = 'lines',
-                                 text = ~Sample,
-                                 hoverinfo = 'text',
-                                 hovertext = paste('Sample:', per_base_quality_tidy$Sample))
-return(per_base_quality_plot)
+per_base_quality_tidy_ggplot <- ggplotly(ggplot(per_base_quality_tidy, aes(x=position, y=phred_score, color=Sample)) + geom_line() + theme_classic())
+return(per_base_quality_tidy_ggplot)
 }
 ```
 
 ```{r}
 per_base_quality_func(multi_qc_directory)
 ```
+######
 
-
-## Per base N-percentage plot (RNA-seq, DNA-seq, ChIP-seq, ATAC-seq)
+######
+## N-content plot (RNA-seq, DNA-seq, ChIP-seq, ATAC-seq)
 ```{r, include=FALSE}
-### Per base quality ###
+### N content ###
 per_base_n_content_func <- function(multi_qc_directory){
 per_base_n_content <- read.table((paste0(multi_qc_directory,'mqc_fastqc_per_base_n_content_plot_1.txt')), header=TRUE, sep='\t')
-
 per_base_n_content_tidy <- gather(per_base_n_content, position, percent_N, -Sample)
-
 per_base_n_content_tidy$position <- gsub('X','', per_base_n_content_tidy$position)
-
 per_base_n_content_tidy$position <- sapply(per_base_n_content_tidy$position, as.numeric)
-per_base_n_content_plot <- plot_ly(data = per_base_n_content_tidy,
-                                 x = ~position,
-                                 y = ~percent_N,
-                                 type = 'scatter',
-                                 mode = 'lines',
-                                 text = ~Sample,
-                                 hoverinfo = 'text',
-                                 hovertext = paste('Sample:', per_base_n_content_tidy$Sample)) %>% layout(yaxis=list(range=c(0,100)))
-return(per_base_n_content_plot)
+per_base_n_content_tidy_ggplot <- ggplotly(ggplot(per_base_n_content_tidy, aes(x=position, y=percent_N, color=Sample)) + geom_line() + theme_classic())
+return(per_base_n_content_tidy_ggplot)
 }
 ```
 
 ```{r}
 per_base_n_content_func(multi_qc_directory)
 ```
+######
 
+######
+## GC content plot (RNA-seq, DNA-seq, ChIP-seq, ATAC-seq)
+```{r, include=FALSE}
+### GC content ###
+gc_content_func <- function(multi_qc_directory){
+gc_content <- read.table((paste0(multi_qc_directory,'mqc_fastqc_per_sequence_gc_content_plot_Counts.txt')), header=TRUE, sep='\t')
 
+gc_content_tidy <- gather(gc_content, position, count, -Sample)
+gc_content_tidy$position <- gsub('X','', gc_content_tidy$position)
+gc_content_tidy$position <- sapply(gc_content_tidy$position, as.numeric)
+gc_content_tidy_ggplot <- ggplotly(ggplot(gc_content_tidy, aes(x=position, y=count, color=Sample)) + geom_line() + theme_classic())
+return(gc_content_tidy_ggplot)
+}
+```
 
+```{r}
+gc_content_func(multi_qc_directory)
+```
+######
+
+######
 ## Adapter content plot (RNA-seq, DNA-seq, ChIP-seq, ATAC-seq)
 ```{r, include=FALSE}
-### Per base quality ###
+### Adapter content ###
 adapter_content_func <- function(multi_qc_directory){
 adapter_content <- read.table((paste0(multi_qc_directory,'mqc_fastqc_adapter_content_plot_1.txt')), header=TRUE, sep='\t')
 
 adapter_content_tidy <- gather(adapter_content, position, percent_of_sequences, -Sample)
 adapter_content_tidy$position <- gsub('X','', adapter_content_tidy$position)
 adapter_content_tidy$position <- sapply(adapter_content_tidy$position, as.numeric)
-adapter_content_plot <- plot_ly(data = adapter_content_tidy,
-                                 x = ~position,
-                                 y = ~percent_of_sequences,
-                                 type = 'scatter',
-                                 mode = 'lines',
-                                 text = ~Sample,
-                                 hoverinfo = 'text',
-                                 hovertext = paste('Sample:', adapter_content_tidy$Sample)) %>% layout(yaxis=list(range=c(0,100)))
-return(adapter_content_plot)
+adapter_content_tidy_ggplot <- ggplotly(ggplot(adapter_content_tidy, aes(x=position, y=percent_of_sequences, color=Sample)) + geom_line() + theme_classic() + theme(legend.position='none'))
+return(adapter_content_tidy_ggplot)
 }
 ```
 
 ```{r}
 adapter_content_func(multi_qc_directory)
 ```
+######
 
 
 
@@ -129,21 +124,15 @@ adapter_content_func(multi_qc_directory)
 
 
 
-<!-- | **Library**    | **# of Raw Reads**   | **Sequence Length**  | **# of poor quality sequences**  | **%GC**   | -->
-<!-- |:-----------------:|:-----------------:|:-----------------:|:-----------------:|:-----------------:| -->
-<!-- | Experiment_A_1    | 50000000 | 150  | 0  |  50 | -->
 
-<!-- ## Part 3: Read quality plots -->
-<!-- * These are additional outputs from FastQC, images should be stored in the assets folder. -->
-<!-- | **Library** | **Raw reads**  | **Trimmed reads** | -->
-<!-- |:------:|:-----------:|:----------:| -->
-<!-- | Experiment_A_1   | ![](assets/raw_reads/Experiment_A_1/per_base_quality.png) | ![](assets/trimmed_reads/Experiment_A_1/per_base_quality.png) | -->
 
-<!-- ## Part 4: GC content plots -->
-<!-- * These are additional outputs from FastQC, images should be stored in the assets folder. -->
-<!-- | **Library** | **Raw reads**  | **Trimmed reads** | -->
-<!-- |:------:|:-----------:|:----------:| -->
-<!-- | Experiment_A_1 | ![](assets/raw_reads/Experiment_A_1/per_sequence_gc_content.png) | ![](assets/trimmed_reads/Experiment_A_1/per_sequence_gc_content.png) | -->
+
+
+
+
+
+
+
 
 <!-- ## Part 5: Kmer content plots -->
 <!-- * These are additional outputs from FastQC, images should be stored in the assets folder. -->
