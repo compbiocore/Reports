@@ -106,7 +106,8 @@ adapter_content <- read.table((paste0(multi_qc_directory,'mqc_fastqc_adapter_con
 adapter_content_tidy <- gather(adapter_content, position, percent_of_sequences, -Sample)
 adapter_content_tidy$position <- gsub('X','', adapter_content_tidy$position)
 adapter_content_tidy$position <- sapply(adapter_content_tidy$position, as.numeric)
-adapter_content_tidy_ggplot <- ggplotly(ggplot(adapter_content_tidy, aes(x=position, y=percent_of_sequences, color=Sample)) + geom_line() + theme_classic() + theme(legend.position='right'))
+par(xpd=TRUE)
+adapter_content_tidy_ggplot <- ggplotly(ggplot(adapter_content_tidy, aes(x=position, y=percent_of_sequences, color=Sample)) + geom_line() + theme_classic() + theme(legend.position='none')) #%>% layout(legend=list(orientation='v', x=.01, y=.01))
 return(adapter_content_tidy_ggplot)
 }
 ```
@@ -118,76 +119,60 @@ adapter_content_func(multi_qc_directory)
 
 
 ######
-## WGS summary statistics (RNA-seq, DNA-seq, ChIP-seq, ATAC-seq)
+## Picard tools CollectWGSMetrics (RNA-seq, DNA-seq, ChIP-seq, ATAC-seq)
 ```{r, include=FALSE}
-### WGS summary statistics ###
-wgs_summary_statistics_func <- function(picard_directory){
+### Picard tools CollectWGSMetrics ###
+CollectWgsMetrics_func <- function(picard_directory){
   wgs_metrics_files <- list.files(path = picard_directory, pattern = 'CollectWgsMetrics.txt', full.names=TRUE)
   wgs_metrics <- lapply(wgs_metrics_files, function(x) (read.table(x, skip=6, nrows=1, header=TRUE, fill=TRUE, sep='\t')))
   names(wgs_metrics) <- strsplit(wgs_metrics_files, split='/') %>% sapply(tail, 1) %>% gsub(pattern='.txt', replacement='')
   wgs_metrics_table <- map_df(wgs_metrics, ~as.data.frame(.x))
-  wgs_metrics_table$library <- names(wgs_metrics)
+  wgs_metrics_table$LIBRARY <- names(wgs_metrics)
   wgs_metrics_md <- kable(wgs_metrics_table, format='markdown')
   return(wgs_metrics_md)
   }
 ```
 ```{r}
-wgs_summary_statistics_func(picard_directory)
+CollectWgsMetrics_func(picard_directory)
 ```
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  InsertSizeMetrics <- lapply(InsertSizeMetrics_files, function(CollectInsertSizeMetrics_file){
-  CollectInsertSizeMetrics_table <- read.table(CollectInsertSizeMetrics_file, skip=6, nrows=2, header=TRUE, sep='\t')
-  CollectInsertSizeMetrics_table$LIBRARY <- CollectInsertSizeMetrics_file
-  CollectInsertSizeMetrics_table_df <- map_df(CollectInsertSizeMetrics_table, ~as.data.frame(.x))
-  #separate out the histogram data
-  CollectInsertSizeMetrics_table_df_no_histo <- CollectInsertSizeMetrics_table_df[!is.na(CollectInsertSizeMetrics_table_df$MEAN_INSERT_SIZE), ]
-  CollectInsertSizeMetrics_table_df_histo <- CollectInsertSizeMetrics_table_df[is.na(CollectInsertSizeMetrics_table_df$MEAN_INSERT_SIZE), ]
-  return(CollectInsertSizeMetrics_table_df_no_histo)
-}
-  
-  
-  
-  
-  
-  wgs_metrics$LIBRARY <- 
-  wgs_table <- bind_rows(wgs_metrics)                      
-  insert_size_metrics_rows$LIBRARY<-insert_size_metrics_file
-    per_base_sequence_quality <- lapply(entire_qc_files, function(x) (df_rows <- slice(x, (which(x$V1=='>>Per base sequence quality')+4):which(x$V1=='>>Per sequence quality scores')-2) %>% select(c('V1','V2','V3','V4','V5','V6','V7')) %>% rename(Base=V1, Mean=V2, Median=V3, LowerQuartile=V4, UpperQuartile=V5, Percentile_10th=V6, Percentile_90th=V7)))
-  
-}
-
+######
+## Picard tools CollectInsertSizeMetrics (RNA-seq, DNA-seq, ChIP-seq, ATAC-seq)
+```{r, include=FALSE}
+### Picard tools CollectWGSMetrics ###
+CollectInsertSizeMetrics_func <- function(picard_directory){
+  insert_metrics_files <- list.files(path = picard_directory, pattern = 'CollectInsertSizeMetrics.txt', full.names=TRUE)
+  insert_metrics <- lapply(insert_metrics_files, function(x) (read.table(x, skip=6, nrows=1, header=TRUE, fill=TRUE, sep='\t')))
+  names(insert_metrics) <- strsplit(insert_metrics_files, split='/') %>% sapply(tail, 1) %>% gsub(pattern='.txt', replacement='')
+  insert_metrics_table <- map_df(insert_metrics, ~as.data.frame(.x))
+  insert_metrics_table$LIBRARY <- names(insert_metrics)
+  insert_metrics_md <- kable(insert_metrics_table, format='markdown')
+  return(insert_metrics_md)
+  }
 ```
-
-adapter_content <- lapply(entire_qc_files, function(x) slice(x, (which(x$V1=='>>Adapter Content')+1):(nrow(x)-1))) 
-
-
-InsertSizeMetrics <- lapply(InsertSizeMetrics_files, function(CollectInsertSizeMetrics_file){
-  CollectInsertSizeMetrics_table <- read.table(CollectInsertSizeMetrics_file, skip=6, nrows=2, header=TRUE, sep='\t')
-  CollectInsertSizeMetrics_table$LIBRARY <- CollectInsertSizeMetrics_file
-  CollectInsertSizeMetrics_table_df <- map_df(CollectInsertSizeMetrics_table, ~as.data.frame(.x))
-  #separate out the histogram data
-  CollectInsertSizeMetrics_table_df_no_histo <- CollectInsertSizeMetrics_table_df[!is.na(CollectInsertSizeMetrics_table_df$MEAN_INSERT_SIZE), ]
-  CollectInsertSizeMetrics_table_df_histo <- CollectInsertSizeMetrics_table_df[is.na(CollectInsertSizeMetrics_table_df$MEAN_INSERT_SIZE), ]
-  return(CollectInsertSizeMetrics_table_df_no_histo)
-}
-
-
-
-
-
-
-
-
+```{r}
+CollectInsertSizeMetrics_func(picard_directory)
+```  
+  
+######
+## Picard tools MarkDuplicate (ChIP-seq, ATAC-seq)
+```{r, include=FALSE}
+### Picard tools CollectWGSMetrics ###
+MarkDuplicates_func <- function(picard_directory){
+  mark_duplicates_files <- list.files(path = picard_directory, pattern = 'MarkDuplicates.txt', full.names=TRUE)
+  mark_duplicates <- lapply(mark_duplicates_files, function(x) (read.table(x, skip=6, nrows=1, header=TRUE, fill=TRUE, sep='\t')))
+  names(mark_duplicates) <- strsplit(mark_duplicates_files, split='/') %>% sapply(tail, 1) %>% gsub(pattern='.txt', replacement='')
+  mark_duplicates_table <- map_df(mark_duplicates, ~as.data.frame(.x))
+  mark_duplicates_table$LIBRARY <- names(mark_duplicates)
+  mark_duplicates_md <- kable(mark_duplicates_table, format='markdown')
+  return(mark_duplicates_md)
+  }
+```
+```{r}
+MarkDuplicates_func(picard_directory)
+```  
 
 
 
