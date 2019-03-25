@@ -121,17 +121,54 @@ adapter_content_func(multi_qc_directory)
 ## WGS summary statistics (RNA-seq, DNA-seq, ChIP-seq, ATAC-seq)
 ```{r, include=FALSE}
 ### WGS summary statistics ###
-wgs_summary_statistics <- function(input_directory){
-  wgs_metrics_files <- list.files(path = input_directory, pattern = 'CollectWgsMetrics.txt')
-  wgs_metrics <- read.table(wgs_metrics_file, skip=6, nrows=2, header=TRUE, sep='\t')
+wgs_summary_statistics_func <- function(picard_directory){
+  wgs_metrics_files <- list.files(path = picard_directory, pattern = 'CollectWgsMetrics.txt', full.names=TRUE)
+  wgs_metrics <- lapply(wgs_metrics_files, function(x) (read.table(x, skip=6, nrows=1, header=TRUE, fill=TRUE, sep='\t')))
+  names(wgs_metrics) <- strsplit(wgs_metrics_files, split='/') %>% sapply(tail, 1) %>% gsub(pattern='.txt', replacement='')
+  wgs_metrics_table <- map_df(wgs_metrics, ~as.data.frame(.x))
+  wgs_metrics_table$library <- names(wgs_metrics)
+  wgs_metrics_md <- kable(wgs_metrics_table, format='markdown')
+  return(wgs_metrics_md)
+  }
+```
+```{r}
+wgs_summary_statistics_func(picard_directory)
+```
+
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  InsertSizeMetrics <- lapply(InsertSizeMetrics_files, function(CollectInsertSizeMetrics_file){
+  CollectInsertSizeMetrics_table <- read.table(CollectInsertSizeMetrics_file, skip=6, nrows=2, header=TRUE, sep='\t')
+  CollectInsertSizeMetrics_table$LIBRARY <- CollectInsertSizeMetrics_file
+  CollectInsertSizeMetrics_table_df <- map_df(CollectInsertSizeMetrics_table, ~as.data.frame(.x))
+  #separate out the histogram data
+  CollectInsertSizeMetrics_table_df_no_histo <- CollectInsertSizeMetrics_table_df[!is.na(CollectInsertSizeMetrics_table_df$MEAN_INSERT_SIZE), ]
+  CollectInsertSizeMetrics_table_df_histo <- CollectInsertSizeMetrics_table_df[is.na(CollectInsertSizeMetrics_table_df$MEAN_INSERT_SIZE), ]
+  return(CollectInsertSizeMetrics_table_df_no_histo)
+}
+  
+  
+  
+  
+  
+  wgs_metrics$LIBRARY <- 
+  wgs_table <- bind_rows(wgs_metrics)                      
+  insert_size_metrics_rows$LIBRARY<-insert_size_metrics_file
+    per_base_sequence_quality <- lapply(entire_qc_files, function(x) (df_rows <- slice(x, (which(x$V1=='>>Per base sequence quality')+4):which(x$V1=='>>Per sequence quality scores')-2) %>% select(c('V1','V2','V3','V4','V5','V6','V7')) %>% rename(Base=V1, Mean=V2, Median=V3, LowerQuartile=V4, UpperQuartile=V5, Percentile_10th=V6, Percentile_90th=V7)))
   
 }
 
 ```
 
-
+adapter_content <- lapply(entire_qc_files, function(x) slice(x, (which(x$V1=='>>Adapter Content')+1):(nrow(x)-1))) 
 
 
 InsertSizeMetrics <- lapply(InsertSizeMetrics_files, function(CollectInsertSizeMetrics_file){
