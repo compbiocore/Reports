@@ -17,6 +17,8 @@ library(tidyverse)
 ```{r, include=FALSE}
 
 multi_qc_directory <- ('/Users/jwalla12/QC_Test_files/raw/multiqc_data/')
+
+picard_directory <- ('/Users/jwalla12/analysis_projects/Scaffa_project/Scaffa_picardtools_metrics/')
 ```
 
 multiqc_general_stats
@@ -24,7 +26,7 @@ multiqc_general_stats
 ## General Stats (RNA-seq, DNA-seq, ChIP-seq, ATAC-seq)
 ```{r, include=FALSE}
 ### Basic Stats ###
-general_stats_func<- function(input_directory){
+general_stats_func<- function(multi_qc_directory){
   general_stats <- read.table((paste0(multi_qc_directory,'multiqc_general_stats.txt')), header=TRUE, sep='\t')
   general_stats_md <- kable(general_stats, format='markdown')
   return(general_stats_md)
@@ -104,7 +106,7 @@ adapter_content <- read.table((paste0(multi_qc_directory,'mqc_fastqc_adapter_con
 adapter_content_tidy <- gather(adapter_content, position, percent_of_sequences, -Sample)
 adapter_content_tidy$position <- gsub('X','', adapter_content_tidy$position)
 adapter_content_tidy$position <- sapply(adapter_content_tidy$position, as.numeric)
-adapter_content_tidy_ggplot <- ggplotly(ggplot(adapter_content_tidy, aes(x=position, y=percent_of_sequences, color=Sample)) + geom_line() + theme_classic() + theme(legend.position='none'))
+adapter_content_tidy_ggplot <- ggplotly(ggplot(adapter_content_tidy, aes(x=position, y=percent_of_sequences, color=Sample)) + geom_line() + theme_classic() + theme(legend.position='right'))
 return(adapter_content_tidy_ggplot)
 }
 ```
@@ -115,14 +117,32 @@ adapter_content_func(multi_qc_directory)
 ######
 
 
+######
+## WGS summary statistics (RNA-seq, DNA-seq, ChIP-seq, ATAC-seq)
+```{r, include=FALSE}
+### WGS summary statistics ###
+wgs_summary_statistics <- function(input_directory){
+  wgs_metrics_files <- list.files(path = input_directory, pattern = 'CollectWgsMetrics.txt')
+  wgs_metrics <- read.table(wgs_metrics_file, skip=6, nrows=2, header=TRUE, sep='\t')
+  
+  
+  
+}
+
+```
 
 
 
 
-
-
-
-
+InsertSizeMetrics <- lapply(InsertSizeMetrics_files, function(CollectInsertSizeMetrics_file){
+  CollectInsertSizeMetrics_table <- read.table(CollectInsertSizeMetrics_file, skip=6, nrows=2, header=TRUE, sep='\t')
+  CollectInsertSizeMetrics_table$LIBRARY <- CollectInsertSizeMetrics_file
+  CollectInsertSizeMetrics_table_df <- map_df(CollectInsertSizeMetrics_table, ~as.data.frame(.x))
+  #separate out the histogram data
+  CollectInsertSizeMetrics_table_df_no_histo <- CollectInsertSizeMetrics_table_df[!is.na(CollectInsertSizeMetrics_table_df$MEAN_INSERT_SIZE), ]
+  CollectInsertSizeMetrics_table_df_histo <- CollectInsertSizeMetrics_table_df[is.na(CollectInsertSizeMetrics_table_df$MEAN_INSERT_SIZE), ]
+  return(CollectInsertSizeMetrics_table_df_no_histo)
+}
 
 
 
